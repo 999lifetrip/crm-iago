@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iago Consultor — CRM & Gestão IA</title>
+    <meta name="description" content="Painel oficial de vendas e atendimento IA com Iago Consultor Online. Gestão de leads, estoque próprio e equipe em tempo real.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,800;1,900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=20260926_1">
+</head>
+<body>
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-bg-orbs">
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+        </div>
+        <div class="login-card">
+            <div class="login-logo">
+                <div class="brand-title">
+                    Iago <span class="car-tag">CONSULTOR</span>
+                </div>
+                <div>
+                    <span class="badge-pill-brand">ATENDIMENTO IA & VENDAS ONLINE</span>
+                </div>
+                <p>Painel de Vendas & Atendimento Inteligente</p>
+            </div>
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="loginEmail">E-mail de Acesso</label>
+                    <input type="email" id="loginEmail" placeholder="luan@omelhorvendedoronline.com.br" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="loginSenha">Senha</label>
+                    <div class="input-with-icon">
+                        <input type="password" id="loginSenha" placeholder="••••••••" required autocomplete="current-password">
+                        <button type="button" id="toggleSenha" class="input-icon-btn" aria-label="Mostrar senha">👁</button>
+                    </div>
+                </div>
+                <div id="loginError" class="login-error hidden">E-mail ou senha incorretos</div>
+                <button type="submit" id="loginBtn" class="btn btn-primary btn-full">
+                    <span class="btn-text">Entrar no Painel</span>
+                    <span class="btn-loader hidden">●●●</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="app" class="app hidden">
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <div class="brand-title" style="font-size: 1.35rem;">
+                    Iago <span class="car-tag" style="font-size: 0.7rem;">CONSULTOR</span>
+                </div>
+                <span class="sidebar-logo-sub">📱 WhatsApp +55 41 9599-3007</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-page="dashboard" id="navDashboard">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-label">Dashboard</span>
+                </button>
+                <button class="nav-item" data-page="leads" id="navLeads">
+                    <span class="nav-icon">💬</span>
+                    <span class="nav-label">WhatsApp</span>
+                    <span class="nav-badge" id="badgeLeads">0</span>
+                </button>
+                <button class="nav-item" data-page="veiculos" id="navVeiculos">
+                    <span class="nav-icon">🚗</span>
+                    <span class="nav-label">Anúncio / Estoque</span>
+                    <span class="nav-badge" id="badgeVeiculos">0</span>
+                </button>
+                <button class="nav-item" data-page="ia-editor" id="navIaEditor">
+                    <span class="nav-icon">🤖</span>
+                    <span class="nav-label">Editor do Robô</span>
+                    <span class="nav-badge" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-size:0.65rem;">IAGO</span>
+                </button>
+                <button class="nav-item" data-page="remarketing" id="navRemarketing">
+                    <span class="nav-icon">🎯</span>
+                    <span class="nav-label">Remarketing</span>
+                </button>
+                <button class="nav-item" data-page="aprovados" id="navAprovados">
+                    <span class="nav-icon">✅</span>
+                    <span class="nav-label">Fichas Aprovadas</span>
+                    <span class="nav-badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size:0.65rem;" id="badgeAprovados">0</span>
+                </button>
+                <button class="nav-item" data-page="avalista" id="navAvalista">
+                    <span class="nav-icon">🤝</span>
+                    <span class="nav-label">Avalista</span>
+                    <span class="nav-badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-size:0.65rem;" id="badgeAvalista">0</span>
+                </button>
+                <button class="nav-item" data-page="equipe" id="navEquipe">
+                    <span class="nav-icon">🏎️</span>
+                    <span class="nav-label">Vendedores</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-user" id="sidebarUser">
+                    <div class="sidebar-user-avatar" id="userAvatar">A</div>
+                    <div class="sidebar-user-info">
+                        <span class="sidebar-user-name" id="userName">Carregando...</span>
+                        <span class="sidebar-user-role" id="userRole">VENDEDOR</span>
+                    </div>
+                </div>
+                <button class="btn-logout" id="btnLogout" title="Sair">⏻</button>
+            </div>
+        </aside>
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+        <!-- MAIN CONTENT -->
+        <main class="main">
+            <!-- HEADER -->
+            <header class="header">
+                <button class="btn-menu-toggle" id="btnMenuToggle" aria-label="Menu">☰</button>
+                <div class="header-title" id="headerTitle">Dashboard Geral</div>
+                <div class="header-actions">
+                    <div class="status-pill">
+                        <div class="status-dot"></div>
+                        <span>IA ONLINE</span>
+                    </div>
+                    <span class="header-time" id="headerTime"></span>
+                </div>
+            </header>
+
+            <!-- PAGES -->
+            <div class="pages">
+
+                <!-- ── DASHBOARD PAGE ── -->
+                <div class="page active" id="pageDashboard">
+                    <div class="page-header dashboard-top-header">
+                        <div>
+                            <h2>Visão Geral da Loja</h2>
+                            <span class="page-subtitle" id="dashDate">Carregando data...</span>
+                        </div>
+                        <div class="dash-quick-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="navigate('veiculos')">🚗 Estoque</button>
+                            <button class="btn btn-primary btn-sm" onclick="navigate('leads')">💬 WhatsApp</button>
+                        </div>
+                    </div>
+
+                    <!-- ── 4 KPI CARDS COMPACTOS ── -->
+                    <div class="stats-grid" id="statsGrid">
+                        <div class="stat-card stat-compact stat-green">
+                            <div class="stat-icon-wrap">
+                                <span class="stat-icon">🏎️</span>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-label">Total de Leads</span>
+                                <div class="stat-value" id="statTotalLeads">—</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card stat-compact stat-emerald">
+                            <div class="stat-icon-wrap">
+                                <span class="stat-icon">🤖</span>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-label">IA Atendendo</span>
+                                <div class="stat-value" id="statIaAtiva">—</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card stat-compact stat-orange">
+                            <div class="stat-icon-wrap">
+                                <span class="stat-icon">👤</span>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-label">Com Vendedor</span>
+                                <div class="stat-value" id="statIaOff">—</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card stat-compact stat-red">
+                            <div class="stat-icon-wrap">
+                                <span class="stat-icon">🔔</span>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-label">Escalados Hoje</span>
+                                <div class="stat-value" id="statEscaladosHoje">—</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── DESTAQUE PRINCIPAL: CLIENTES PEDINDO VENDEDOR HUMANO (URGENTE) ── -->
+                    <div class="card card-escalados-hero">
+                        <div class="card-header card-header-urgent">
+                            <div class="urgent-header-left">
+                                <span class="urgent-pulse-icon">🔔</span>
+                                <div>
+                                    <h3>Clientes Pedindo Vendedor Humano (Urgente)</h3>
+                                    <span class="urgent-subtitle">Triagens concluídas, propostas de troca ou pedidos de consultor</span>
+                                </div>
+                            </div>
+                            <span class="badge-urgent-counter" id="badgeEscaladosCount">0 aguardando</span>
+                        </div>
+                        <div class="card-body">
+                            <div id="escaladosList" class="escalados-list">
+                                <div class="empty-state">Sem clientes aguardando atendimento humano no momento 🎉</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── ÚLTIMAS CONVERSAS NO WHATSAPP ── -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="live-dot-pulse"></span>
+                                <h3>Últimas Conversas no WhatsApp</h3>
+                            </div>
+                            <button class="btn btn-ghost btn-sm" onclick="navigate('leads')">Ver Todos →</button>
+                        </div>
+                        <div class="card-body" style="padding: 0.75rem;">
+                            <div id="liveActivityList" class="live-activity-list">
+                                <div class="loading-placeholder">Carregando atividade...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ── LEADS PAGE ── -->
+                <div class="page" id="pageLeads">
+                    <div class="page-header">
+                        <div>
+                            <h2>WhatsApp</h2>
+                            <span class="page-subtitle">Acompanhe e assuma conversas do WhatsApp em tempo real</span>
+                        </div>
+                        <div class="page-header-actions">
+                            <div class="search-box">
+                                <span class="search-icon">🔍</span>
+                                <input type="text" id="searchInput" placeholder="Buscar por cliente ou telefone...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="filters-bar">
+                        <div class="filter-chips" id="etiquetasFilter">
+                            <button class="filter-chip active" data-etiqueta="">Todos os Leads</button>
+                            <button class="filter-chip" data-etiqueta="novo">🆕 Novos</button>
+                            <button class="filter-chip" data-etiqueta="qualificado">⭐ Triagem OK</button>
+                            <button class="filter-chip" data-etiqueta="aprovado">✅ Aprovados</button>
+                            <button class="filter-chip" data-etiqueta="a_vista">💵 À Vista</button>
+                            <button class="filter-chip" data-etiqueta="agendado">📅 Agendados</button>
+                            <button class="filter-chip" data-etiqueta="fechado">🤝 Fechados</button>
+                            <button class="filter-chip" data-etiqueta="perdido">❌ Perdidos</button>
+                            <button class="filter-chip" data-etiqueta="escalado">🔔 Escalados</button>
+                        </div>
+                    </div>
+
+                    <div class="table-card">
+                        <table class="data-table" id="leadsTable">
+                            <thead>
+                                <tr>
+                                    <th>Lead / Telefone</th>
+                                    <th>Status IA</th>
+                                    <th>Etiqueta</th>
+                                    <th>Última Mensagem</th>
+                                    <th>Última Interação</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leadsTableBody">
+                                <tr>
+                                    <td colspan="7" class="table-loading">Carregando leads...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagination" id="pagination"></div>
+                </div>
+
+                <!-- ── VEICULOS PAGE (ESTOQUE & FOTOS) ── -->
+                <div class="page" id="pageVeiculos">
+                    <div class="page-header">
+                        <div>
+                            <h2>Anúncio / Estoque</h2>
+                            <span class="page-subtitle">Cadastre carros e fotos diretamente no CRM para o Iago enviar aos clientes (Fotos do anúncio ou fotos do estoque completo)</span>
+                        </div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button class="btn btn-secondary" id="btnSyncRevendaMais" title="Importar automaticamente carros e fotos da RevendaMais">
+                                <span id="btnSyncText">🔄 Sincronizar RevendaMais</span>
+                                <span id="btnSyncSpinner" class="spinner-small hidden"></span>
+                            </button>
+                            <button class="btn btn-primary" id="btnNovoVeiculo">🚗 + Cadastrar Carro</button>
+                        </div>
+                    </div>
+
+                    <div class="filters-bar">
+                        <div class="search-box" style="max-width: 320px;">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="searchVeiculos" placeholder="Buscar por modelo, marca ou ano...">
+                        </div>
+                        <div class="filter-group">
+                            <span class="filter-label">Filtrar:</span>
+                            <div class="filter-chips">
+                                <button class="filter-chip active" data-filter-veiculo="destaque" data-value="">Todos os Carros</button>
+                                <button class="filter-chip" data-filter-veiculo="destaque" data-value="true">📢 Carros do Anúncio</button>
+                                <button class="filter-chip" data-filter-veiculo="ativo" data-value="true">🟢 Liberados para IA</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="veiculos-grid" id="veiculosGrid">
+                        <div class="loading-placeholder">Carregando estoque de veículos...</div>
+                    </div>
+                </div>
+
+                <!-- ── IA PROMPT EDITOR PAGE ── -->
+                <div class="page" id="pageIaEditor">
+                    <div class="page-header">
+                        <div>
+                            <h2>🤖 Editor do Robô</h2>
+                            <span class="page-subtitle">Converse e treine o Iago com ordens simples em português</span>
+                        </div>
+                        <div class="page-header-actions">
+                            <span class="badge-version-pill" id="promptVersionBadge">Versão 1</span>
+                            <button class="btn btn-primary" id="btnSalvarPrompt">💾 Salvar e Ativar no WhatsApp</button>
+                        </div>
+                    </div>
+
+                    <!-- ABAS DE VISUALIZAÇÃO -->
+                    <div class="ia-tabs-nav">
+                        <button class="ia-tab-btn active" id="tabModoChat">💬 Conversar & Treinar o Iago (Chat)</button>
+                        <button class="ia-tab-btn" id="tabModoVisual">🎛️ Painel de Controle Rápido</button>
+                        <button class="ia-tab-btn" id="tabModoAvancado">📝 Prompt do Sistema (Bruto)</button>
+                    </div>
+
+                    <!-- ═════ ABA 1: CHAT CONVERSACIONAL COM O IAGO (HERO) ═════ -->
+                    <div class="ia-tab-content" id="viewModoChat">
+                        <div class="ia-chat-treinador-container">
+                            <!-- HEADER DO CHAT -->
+                            <div class="ia-chat-header">
+                                <div class="ia-chat-profile">
+                                    <div class="ia-chat-avatar-wrap">
+                                        <div class="ia-chat-avatar">🤖</div>
+                                        <div class="ia-chat-status-dot online"></div>
+                                    </div>
+                                    <div class="ia-chat-info">
+                                        <div class="ia-chat-name">Iago — Consultor de Vendas Online</div>
+                                        <div class="ia-chat-subtitle">🟢 Online no WhatsApp • <span id="chatTreinadorVersao">Versão 1</span></div>
+                                    </div>
+                                </div>
+                                <div class="ia-chat-header-actions">
+                                    <button class="btn btn-ghost btn-sm" id="btnLimparChatTreinador" title="Limpar conversa">🧹 Limpar Chat</button>
+                                </div>
+                            </div>
+
+                            <!-- HISTÓRICO DE MENSAGENS -->
+                            <div class="ia-chat-body" id="chatTreinadorMessages">
+                                <div class="chat-loading-placeholder">Carregando conversa com o Iago...</div>
+                            </div>
+
+                            <!-- BARRA DE ENVIO DE ORDENS -->
+                            <div class="ia-chat-footer">
+                                <textarea id="inputOrdemTreinador" class="ia-chat-input" placeholder="Diga ao Iago o que fazer ou mudar no atendimento..." rows="1"></textarea>
+                                <button class="btn-chat-send" id="btnEnviarOrdemTreinador" title="Enviar ordem">
+                                    <span>🚀</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ═════ ABA 2: PAINEL DE CONTROLE VISUAL ═════ -->
+                    <div class="ia-tab-content hidden" id="viewModoVisual">
+                        <div class="ia-visual-grid">
+                            
+                            <!-- CARD 1: PROMOÇÃO / CAMPANHA ATIVA -->
+                            <div class="card ia-card-highlight">
+                                <div class="card-header">
+                                    <div class="ia-card-title-wrap">
+                                        <span class="ia-icon-glow">📣</span>
+                                        <div>
+                                            <h3>Promoção / Campanha da Semana</h3>
+                                            <span class="card-subtitle">O Iago usará este argumento durante as conversas no WhatsApp</span>
+                                        </div>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="promoAtivaCheck" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="card-body">
+                                    <textarea id="promoTextoInput" class="form-control form-textarea-sm" placeholder="Ex: Feirão de Sábado com entrada facilitada em até 10x e IPVA 2026 Grátis em todo o estoque!"></textarea>
+                                    <div class="promo-quick-suggestions">
+                                        <span class="quick-label">⚡ Sugestões Rápidas:</span>
+                                        <div class="quick-tags-wrap">
+                                            <button type="button" class="btn-quick-tag" data-tag="Feirão de Sábado com zero de entrada e taxa especial nos bancos parceiros!">🎉 Feirão Zero Entrada</button>
+                                            <button type="button" class="btn-quick-tag" data-tag="IPVA 2026 Totalmente Pago e Transferência Grátis para fechar essa semana!">🚗 IPVA + Transferência Grátis</button>
+                                            <button type="button" class="btn-quick-tag" data-tag="Tanque Cheio de cortesia e 1ª parcela só para daqui a 60 dias!">⛽ Tanque Cheio + 60 Dias</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- CARD 2: TOM DE VOZ & PERSONALIDADE -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="ia-card-title-wrap">
+                                        <span class="ia-icon-glow">🎭</span>
+                                        <div>
+                                            <h3>Tom de Voz do Atendimento</h3>
+                                            <span class="card-subtitle">Escolha como o Iago se comunica com seus clientes</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="tone-cards-grid">
+                                        <div class="tone-card active" data-tone="consultivo">
+                                            <div class="tone-icon">😊</div>
+                                            <div class="tone-title">Consultivo & Gente Boa</div>
+                                            <div class="tone-desc">Amigável, atencioso e empático. Focado em entender a necessidade e passar confiança. (Recomendado)</div>
+                                        </div>
+                                        <div class="tone-card" data-tone="fechador">
+                                            <div class="tone-icon">⚡</div>
+                                            <div class="tone-title">Fechamento Rápido</div>
+                                            <div class="tone-desc">Direto ao ponto, focado em puxar a simulação e aprovação bancária sem enrolação.</div>
+                                        </div>
+                                        <div class="tone-card" data-tone="calmo">
+                                            <div class="tone-icon">🤝</div>
+                                            <div class="tone-title">Explicativo & Paciente</div>
+                                            <div class="tone-desc">Ideal para clientes receosos, explicando com calma cada detalhe de parcelas e financiamento.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- CARD 3: CONDIÇÕES DE VENDA & TROCA -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="ia-card-title-wrap">
+                                        <span class="ia-icon-glow">💰</span>
+                                        <div>
+                                            <h3>Condições de Pagamento & Trocas</h3>
+                                            <span class="card-subtitle">O que o Iago está autorizado a aceitar</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-row-2">
+                                        <div class="form-group">
+                                            <label>Aceita Veículo na Troca?</label>
+                                            <div class="checkbox-group-vertical">
+                                                <label class="checkbox-label">
+                                                    <input type="checkbox" id="trocaCarroCheck" checked>
+                                                    <span>🚗 Aceita Carros de Menor/Maior Valor</span>
+                                                </label>
+                                                <label class="checkbox-label">
+                                                    <input type="checkbox" id="trocaMotoCheck" checked>
+                                                    <span>🏍️ Aceita Motos na Troca</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Regras de Financiamento</label>
+                                            <div class="checkbox-group-vertical">
+                                                <label class="checkbox-label">
+                                                    <input type="checkbox" id="negativadoCheck" checked>
+                                                    <span>🤝 Atende e roda ficha de Negativados / Score Baixo</span>
+                                                </label>
+                                                <label class="checkbox-label">
+                                                    <input type="checkbox" id="semEntradaCheck" checked>
+                                                    <span>💎 Trabalha com opções Sem Entrada (100% financiado)</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- ═════ ABA 3: PROMPT BRUTO DO SISTEMA ═════ -->
+                    <div class="ia-tab-content hidden" id="viewModoAvancado">
+                        <div class="ia-editor-grid">
+                            <div class="ia-editor-col-left">
+                                <div class="card" style="height: 100%; display: flex; flex-direction: column;">
+                                    <div class="card-header" style="justify-content: space-between;">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <h3>📝 System Prompt do Agente</h3>
+                                            <span class="token-count-pill" id="promptCharCount">0 caracteres</span>
+                                        </div>
+                                        <div style="display: flex; gap: 8px;">
+                                            <button class="btn btn-ghost btn-sm" id="btnRestaurarPadrao" title="Restaurar prompt padrão de fábrica">
+                                                🔄 Restaurar Padrão
+                                            </button>
+                                            <select id="selectHistoricoPrompt" class="form-control form-control-sm" style="max-width: 170px;">
+                                                <option value="">⏮️ Histórico...</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="card-body" style="flex: 1; display: flex; flex-direction: column; padding: 12px;">
+                                        <textarea id="promptTextarea" class="prompt-code-editor" spellcheck="false" placeholder="Carregando prompt do Iago..."></textarea>
+                                        <div class="prompt-editor-footer">
+                                            <span class="prompt-hint">💡 O Iago consulta esse prompt a cada mensagem no WhatsApp. Todas as variáveis e regras de ferramentas são validadas automaticamente.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ia-editor-col-right">
+                                <div class="card ia-ai-card">
+                                    <div class="card-header">
+                                        <h3>🤖 Assistente de Sugestões com IA</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="ia-ai-desc">
+                                            Escreva em linguagem natural o que você quer mudar no Iago. A IA irá mesclar sua instrução no prompt mantendo todas as regras do sistema intactas!
+                                        </p>
+                                        <div class="form-group mt-sm">
+                                            <label>Sua Sugestão:</label>
+                                            <textarea id="sugestaoIaInput" class="form-control form-textarea-sm" placeholder="Digite sua sugestão..."></textarea>
+                                        </div>
+                                        <button class="btn btn-primary btn-full mt-sm" id="btnRefinarPrompt">
+                                            <span id="btnRefinarText">✨ Refinar Prompt com IA</span>
+                                            <span id="btnRefinarSpinner" class="spinner-small hidden"></span>
+                                        </button>
+                                        <div class="ia-refinar-result hidden" id="iaRefinarResult">
+                                            <div class="ia-refinar-header">
+                                                <span class="ia-refinar-icon">✅</span>
+                                                <strong>Sugestão Processada!</strong>
+                                            </div>
+                                            <div class="ia-refinar-resumo" id="iaRefinarResumo"></div>
+                                            <div class="ia-refinar-actions">
+                                                <button class="btn btn-secondary btn-sm" id="btnDesfazerRefinamento">Desfazer</button>
+                                                <button class="btn btn-primary btn-sm" id="btnAplicarESalvar">Aprovar e Publicar 🚀</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ── EQUIPE PAGE ── -->
+                <div class="page" id="pageEquipe">
+                    <div class="page-header">
+                        <div>
+                            <h2>Equipe de Vendas</h2>
+                            <span class="page-subtitle">Gerencie os consultores e vendedores online</span>
+                        </div>
+                        <button class="btn btn-primary" id="btnNovoUsuario">+ Novo Consultor</button>
+                    </div>
+
+                    <div class="cards-grid" id="equipeGrid">
+                        <div class="loading-placeholder">Carregando equipe...</div>
+                    </div>
+                </div>
+
+                <!-- ── REMARKETING PAGE (3h, 6h, 12h) ── -->
+                <div class="page" id="pageRemarketing">
+                    <div class="page-header">
+                        <div>
+                            <h2>🎯 Motor de Remarketing Inteligente (Anti-Vácuo)</h2>
+                            <span class="page-subtitle">Reengaje automaticamente leads que pararam de responder após 3h, 6h e 12h</span>
+                        </div>
+                        <div class="page-header-actions">
+                            <button class="btn btn-primary" id="btnExecutarRemarketingAgora">
+                                <span id="btnExecutarRemarketingText">⚡ Executar Remarketing Agora</span>
+                                <span id="btnExecutarRemarketingSpinner" class="spinner-small hidden"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3 Cards de Etapas 3h, 6h, 12h -->
+                    <div class="cards-grid" id="remarketingConfigGrid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
+                        <div class="loading-placeholder">Carregando regras de remarketing...</div>
+                    </div>
+
+                    <!-- Histórico de Disparos de Remarketing -->
+                    <div class="card mt-md">
+                        <div class="card-header" style="justify-content: space-between;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <h3>📋 Histórico de Disparos Recentes</h3>
+                                <span class="badge-pill-brand" id="remarketingTotalCount">0 disparos</span>
+                            </div>
+                            <button class="btn btn-ghost btn-sm" id="btnAtualizarHistoricoRemarketing">🔄 Atualizar Fila</button>
+                        </div>
+                        <div class="table-card" style="border:none; box-shadow:none;">
+                            <table class="data-table" id="remarketingTable">
+                                <thead>
+                                    <tr>
+                                        <th>Lead / Telefone</th>
+                                        <th>Etapa</th>
+                                        <th>Mensagem Enviada</th>
+                                        <th>Horário do Envio</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="remarketingTableBody">
+                                    <tr>
+                                        <td colspan="5" class="table-loading">Carregando histórico...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── FICHAS APROVADAS & COMPRAS À VISTA ── -->
+                <div class="page" id="pageAprovados">
+                    <div class="page-header">
+                        <div>
+                            <h2>✅ Painel de Fichas Aprovadas & Compras</h2>
+                            <span class="page-subtitle">Clientes com crédito aprovado ou compras à vista para fechamento e entrega</span>
+                        </div>
+                        <div class="page-header-actions">
+                            <button class="btn btn-ghost" id="btnAtualizarAprovados">🔄 Atualizar Fichas</button>
+                        </div>
+                    </div>
+
+                    <!-- Métricas de Aprovados -->
+                    <div class="stats-row" style="margin-bottom: 1.25rem;">
+                        <div class="stat-card stat-compact stat-emerald">
+                            <div class="stat-icon-wrap"><span class="stat-icon">✅</span></div>
+                            <div class="stat-info">
+                                <span class="stat-label">Total Aprovados / À Vista</span>
+                                <div class="stat-value" id="statTotalAprovados">0</div>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-compact stat-emerald">
+                            <div class="stat-icon-wrap"><span class="stat-icon">📄</span></div>
+                            <div class="stat-info">
+                                <span class="stat-label">Financiamento Aprovado</span>
+                                <div class="stat-value" id="statFinanciamentoAprovado">0</div>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-compact stat-orange">
+                            <div class="stat-icon-wrap"><span class="stat-icon">💵</span></div>
+                            <div class="stat-info">
+                                <span class="stat-label">Compra À Vista</span>
+                                <div class="stat-value" id="statAVistaCount">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filtros e Busca -->
+                    <div class="filters-bar" style="margin-bottom: 1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                        <div class="filter-chips" id="aprovadosTipoFilter">
+                            <button class="filter-chip active" data-tipo="todos">Todos (<span id="countChipTodos">0</span>)</button>
+                            <button class="filter-chip" data-tipo="aprovado">✅ Financiamento Aprovado (<span id="countChipAprovados">0</span>)</button>
+                            <button class="filter-chip" data-tipo="a_vista">💵 Compra À Vista (<span id="countChipAVista">0</span>)</button>
+                        </div>
+                        <div class="search-box">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="buscaAprovadosInput" placeholder="Buscar por cliente, carro ou telefone...">
+                        </div>
+                    </div>
+
+                    <!-- Tabela de Fichas Aprovadas -->
+                    <div class="table-card">
+                        <table class="data-table" id="aprovadosTable">
+                            <thead>
+                                <tr>
+                                    <th>Cliente / WhatsApp</th>
+                                    <th>Tipo</th>
+                                    <th>Veículo de Interesse</th>
+                                    <th>Condição (Entrada / Parcela)</th>
+                                    <th>Documentação (CPF / Nasc)</th>
+                                    <th>Consultor</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="aprovadosTableBody">
+                                <tr>
+                                    <td colspan="7" class="table-loading">Carregando fichas aprovadas...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ── AVALISTA / REPROVADOS PAGE ── -->
+                <div class="page" id="pageAvalista">
+                    <div class="page-header">
+                        <div>
+                            <h2>🤝 Motor de Avalista (Recuperação de Fichas)</h2>
+                            <span class="page-subtitle">Configure a mensagem e envie automaticamente ou com 1 clique para clientes que precisam de outro nome / avalista</span>
+                        </div>
+                        <div class="page-header-actions">
+                            <button class="btn btn-primary" id="btnDispararAvalistaTodos">
+                                <span id="btnDispararAvalistaText">⚡ Pedir Avalista para Pendentes</span>
+                                <span id="btnDispararAvalistaSpinner" class="spinner-small hidden"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Cards de Configuração de Avalista -->
+                    <div class="cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); margin-bottom: 1.25rem;">
+                        
+                        <!-- CARD 1: FORMATO DE ENVIO (TEXTO OU ÁUDIO) -->
+                        <div class="card" style="border: 1px solid rgba(16, 185, 129, 0.25);">
+                            <div class="card-header">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span style="font-size:1.3rem;">🎙️</span>
+                                    <div>
+                                        <h3>Formato de Envio ao Cliente</h3>
+                                        <span class="card-subtitle">Como o Iago deve mandar o pedido de avalista</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div style="display: flex; gap: 12px; margin-bottom: 1rem;">
+                                    <label class="radio-label-card" id="labelFormatoTexto" style="flex:1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.5);">
+                                        <input type="radio" name="formatoEnvioAvalista" id="radioAvalistaTexto" value="texto" checked>
+                                        <div>
+                                            <strong>💬 Texto WhatsApp</strong>
+                                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Mensagem digitada rápida e direta</div>
+                                        </div>
+                                    </label>
+                                    <label class="radio-label-card" id="labelFormatoAudio" style="flex:1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.03);">
+                                        <input type="radio" name="formatoEnvioAvalista" id="radioAvalistaAudio" value="audio">
+                                        <div>
+                                            <strong>🎙️ Áudio Humanizado</strong>
+                                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Voz gravada do consultor Iago</div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; background: rgba(16, 185, 129, 0.08); padding: 10px 14px; border-radius: 8px; border: 1px dashed rgba(16, 185, 129, 0.35); flex-wrap: wrap; gap: 8px;">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <button type="button" class="btn btn-ghost btn-sm" id="btnPreviewAudioAvalista" style="border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-weight:600;">
+                                            🎧 Ouvir Áudio do Iago (Prévia)
+                                        </button>
+                                        <span id="previewAudioSpinner" class="spinner-small hidden"></span>
+                                    </div>
+                                    <audio id="audioAvalistaPlayer" controls class="hidden" style="height: 32px; max-width: 220px;"></audio>
+                                </div>
+
+                                <div style="background: rgba(0,0,0,0.25); padding: 10px; border-radius: 8px; font-size: 0.8rem; color: var(--text-secondary);">
+                                    💡 <strong>Dica de Conversão:</strong> Mensagens de áudio humanizado com a voz do Iago aumentam em até 40% a resposta de clientes que desanimaram com a primeira reprovação!
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CARD 2: MENSAGEM CONFIGURADA -->
+                        <div class="card" style="border: 1px solid rgba(16, 185, 129, 0.25);">
+                            <div class="card-header" style="justify-content: space-between;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span style="font-size:1.3rem;">📝</span>
+                                    <div>
+                                        <h3>Mensagem de Pedido de Avalista</h3>
+                                        <span class="card-subtitle">Use {nome} para o primeiro nome do cliente</span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary btn-sm" id="btnSalvarAvalistaMensagem">💾 Salvar Mensagem</button>
+                            </div>
+                            <div class="card-body">
+                                <textarea id="inputAvalistaMensagem" class="form-control form-textarea-sm" style="font-size:0.84rem; line-height:1.45; min-height:110px; background:rgba(3,10,6,0.9); font-family:inherit;" placeholder="Digite a mensagem..."></textarea>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+                                    <div style="font-size:0.75rem; color:var(--text-secondary);">
+                                        Tags disponíveis: <span class="badge-tag-pill">{nome}</span>
+                                    </div>
+                                    <button class="btn btn-ghost btn-sm" id="btnRestaurarPadraoAvalista" style="font-size:0.75rem;">Restaurar Padrão</button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- HISTÓRICO DE CLIENTES REPROVADOS / AGUARDANDO AVALISTA -->
+                    <div class="card">
+                        <div class="card-header" style="justify-content: space-between;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <h3>📋 Clientes Reprovados & Aguardando Avalista</h3>
+                                <span class="badge-pill-brand" id="avalistaTotalCount">0 clientes</span>
+                            </div>
+                            <button class="btn btn-ghost btn-sm" id="btnAtualizarFilaAvalista">🔄 Atualizar Fila</button>
+                        </div>
+                        <div class="table-card" style="border:none; box-shadow:none;">
+                            <table class="data-table" id="avalistaTable">
+                                <thead>
+                                    <tr>
+                                        <th>Cliente / Telefone</th>
+                                        <th>Status do Lead</th>
+                                        <th>Última Mensagem</th>
+                                        <th>Horário</th>
+                                        <th>Ação Imediata</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="avalistaTableBody">
+                                    <tr>
+                                        <td colspan="5" class="table-loading">Carregando lista de avalistas...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- ── MODAL: LEAD DETALHE ── -->
+    <div class="modal-overlay hidden" id="modalLead">
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <div class="modal-lead-info">
+                    <div class="modal-avatar" id="modalAvatar">C</div>
+                    <div>
+                        <h3 id="modalLeadNome">Cliente</h3>
+                        <span id="modalLeadTelefone" class="modal-sub"></span>
+                    </div>
+                </div>
+                <button class="modal-close" id="modalLeadClose">✕</button>
+            </div>
+            <div class="modal-body modal-two-col">
+                <div class="modal-col modal-col-left">
+                    <div class="modal-section">
+                        <h4>Atendimento Automático IA</h4>
+                        <div class="ia-toggle-wrapper">
+                            <span id="iaStatusLabel" class="ia-status-label ia-on">🤖 IA Ativa</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="iaToggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-section">
+                        <h4>Etiqueta do Funil</h4>
+                        <div class="etiqueta-grid" id="etiquetaGrid"></div>
+                    </div>
+                    <div class="modal-section">
+                        <h4>Consultor Responsável</h4>
+                        <select id="vendedorSelect" class="form-control"></select>
+                    </div>
+
+                    <!-- Bloco de Triagem do Cliente (Auto-extraído pelo Iago) -->
+                    <div class="modal-section" style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                            <h4 style="margin:0; font-size:0.85rem; color:#34d399; display:flex; align-items:center; gap:6px;">
+                                <span>📋 Ficha de Triagem (Iago IA)</span>
+                            </h4>
+                            <div style="display:flex; gap:6px;">
+                                <button type="button" class="btn btn-sm" id="btnMarcarAprovadoModal" style="background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); padding:3px 8px; font-size:0.75rem; font-weight:600; cursor:pointer;" title="Marcar como Financiamento Aprovado">
+                                    ✅ Aprovado
+                                </button>
+                                <button type="button" class="btn btn-sm" id="btnMarcarAVistaModal" style="background:rgba(234,179,8,0.2); color:#facc15; border:1px solid rgba(234,179,8,0.4); padding:3px 8px; font-size:0.75rem; font-weight:600; cursor:pointer;" title="Marcar como Compra À Vista">
+                                    💵 À Vista
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="fichaTriagemContainer" style="font-size:0.8rem; line-height:1.5; display:grid; grid-template-columns: 1fr 1fr; gap:6px 10px;">
+                            <div><span style="color:var(--text-secondary);">🚗 Carro:</span> <strong id="triagemCarro" style="color:#fff;">—</strong></div>
+                            <div><span style="color:var(--text-secondary);">💳 Forma:</span> <strong id="triagemForma" style="color:#fff;">—</strong></div>
+                            <div><span style="color:var(--text-secondary);">💰 Entrada:</span> <strong id="triagemEntrada" style="color:#fff;">—</strong></div>
+                            <div><span style="color:var(--text-secondary);">💵 Parcela:</span> <strong id="triagemParcela" style="color:#fff;">—</strong></div>
+                            <div><span style="color:var(--text-secondary);">📄 CPF:</span> <strong id="triagemCpf" style="color:#fff; font-family:monospace;">—</strong></div>
+                            <div><span style="color:var(--text-secondary);">🎂 Nasc:</span> <strong id="triagemNasc" style="color:#fff;">—</strong></div>
+                            <div><span style="color:var(--text-secondary);">🪪 CNH:</span> <strong id="triagemCnh" style="color:#fff;">—</strong></div>
+                            <div><span style="color:var(--text-secondary);">🔄 Troca:</span> <strong id="triagemTroca" style="color:#fff;">—</strong></div>
+                        </div>
+                        <div id="triagemResumoWrapper" style="margin-top:8px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08); font-size:0.75rem; color:var(--text-secondary);">
+                            <span style="color:#94a3b8; font-weight:600;">📝 Resumo:</span> <span id="triagemResumo" style="color:#cbd5e1;">Aguardando dados de simulação...</span>
+                        </div>
+                    </div>
+
+                    <div class="modal-section">
+                        <h4>Anotações do Veículo / Negociação</h4>
+                        <textarea id="anotacoesInput" class="form-control form-textarea" placeholder="Ex: Interessado no Corolla 2022, tem troca de Gol 2018..."></textarea>
+                    </div>
+                    <button class="btn btn-primary btn-full" id="btnSalvarLead">💾 Salvar Lead</button>
+
+                </div>
+                <div class="modal-col modal-col-right modal-chat-col">
+                    <div class="chat-header-bar">
+                        <h4>💬 Conversa WhatsApp</h4>
+                        <span class="chat-live-indicator"><span class="live-dot"></span> Ao Vivo</span>
+                    </div>
+                    <div class="chat-view" id="chatView">
+                        <div class="chat-loading">Carregando conversa...</div>
+                    </div>
+
+                    <!-- Imagem Preview antes de enviar -->
+                    <div id="imagePreviewContainer" class="image-preview-container hidden">
+                        <div class="preview-img-wrap">
+                            <img id="imagePreviewImg" src="" alt="Preview">
+                            <button type="button" id="btnRemoveImagePreview" class="btn-remove-preview">✕</button>
+                        </div>
+                        <span class="preview-hint">Pronto para enviar com legenda ou direto</span>
+                    </div>
+
+                    <!-- Barra de Gravação de Áudio -->
+                    <div id="recordingBar" class="recording-bar hidden">
+                        <div class="recording-indicator">
+                            <span class="rec-dot"></span>
+                            <span>Gravando áudio de voz: <strong id="recTimer">0:00</strong></span>
+                        </div>
+                        <div class="recording-actions">
+                            <button type="button" class="btn-rec-cancel" id="btnCancelRec">✕ Cancelar</button>
+                            <button type="button" class="btn-rec-send" id="btnSendRec">➤ Enviar Áudio</button>
+                        </div>
+                    </div>
+
+                    <!-- Barra de Envio WhatsApp -->
+                    <div class="chat-input-bar" id="chatInputBar">
+                        <input type="file" id="chatFileInput" accept="image/*" class="hidden">
+                        <button type="button" class="chat-action-btn" id="btnAttachImage" title="Enviar Foto">📸</button>
+                        
+                        <div class="chat-input-wrapper">
+                            <textarea id="msgManualInput" class="chat-textarea" placeholder="Digite uma mensagem... (Enter envia, Shift+Enter pula linha)" rows="1"></textarea>
+                        </div>
+                        
+                        <button type="button" class="chat-action-btn btn-mic" id="btnRecordAudio" title="Gravar Áudio de Voz">🎙️</button>
+                        <button type="button" class="btn-send-msg" id="btnEnviarMsg" title="Enviar Mensagem">➤</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── MODAL: NOVO USUÁRIO ── -->
+    <div class="modal-overlay hidden" id="modalUsuario">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Novo Consultor de Vendas</h3>
+                <button class="modal-close" id="modalUsuarioClose">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="formUsuario">
+                    <div class="form-group">
+                        <label>Nome Completo</label>
+                        <input type="text" id="usuarioNome" class="form-control" placeholder="Iago Consultor" required>
+                    </div>
+                    <div class="form-group">
+                        <label>E-mail de Login</label>
+                        <input type="email" id="usuarioEmail" class="form-control" placeholder="iago@omelhorvendedoronline.com.br" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Senha</label>
+                        <input type="password" id="usuarioSenha" class="form-control" placeholder="Mínimo 6 caracteres" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label>Função</label>
+                        <select id="usuarioRole" class="form-control">
+                            <option value="vendedor">Consultor de Vendas</option>
+                            <option value="admin">Gerente / Administrador</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-ghost" id="btnCancelarUsuario">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Cadastrar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── MODAL: NOVO / EDITAR VEÍCULO ── -->
+    <div class="modal-overlay hidden" id="modalVeiculo">
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <h3 id="modalVeiculoTitle">🚗 Cadastrar Novo Veículo</h3>
+                <button class="modal-close" id="modalVeiculoClose">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="formVeiculo">
+                    <input type="hidden" id="veiculoId">
+                    <div class="form-row-3">
+                        <div class="form-group">
+                            <label>Modelo do Carro *</label>
+                            <input type="text" id="veiculoModelo" class="form-control" placeholder="Ex: Ka, Classic, Gol, Onix" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Marca / Fabricante</label>
+                            <input type="text" id="veiculoMarca" class="form-control" placeholder="Ex: Ford, Chevrolet, VW, Fiat">
+                        </div>
+                        <div class="form-group">
+                            <label>Ano Fabricação / Modelo</label>
+                            <input type="text" id="veiculoAno" class="form-control" placeholder="Ex: 2017 ou 2016/2017">
+                        </div>
+                    </div>
+
+                    <div class="form-row-3">
+                        <div class="form-group">
+                            <label>Preço de Venda (R$)</label>
+                            <input type="number" step="0.01" id="veiculoPreco" class="form-control" placeholder="Ex: 42000">
+                        </div>
+                        <div class="form-group">
+                            <label>Cor</label>
+                            <input type="text" id="veiculoCor" class="form-control" placeholder="Ex: Branco, Prata, Preto">
+                        </div>
+                        <div class="form-group">
+                            <label>Câmbio</label>
+                            <select id="veiculoCambio" class="form-control">
+                                <option value="Manual">Manual</option>
+                                <option value="Automático">Automático</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label>Quilometragem (KM)</label>
+                            <input type="number" id="veiculoKm" class="form-control" placeholder="Ex: 78000">
+                        </div>
+                        <div class="form-group">
+                            <label>Combustível</label>
+                            <input type="text" id="veiculoCombustivel" class="form-control" placeholder="Ex: Flex, Gasolina">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Opcionais e Itens de Série</label>
+                        <input type="text" id="veiculoOpcionais" class="form-control" placeholder="Ex: Ar-condicionado, Direção elétrica, Vidros elétricos, Multimídia Bluetooth">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Diferenciais & Condições (Iago usa na conversa)</label>
+                        <input type="text" id="veiculoDiferenciais" class="form-control" placeholder="Ex: Revisado, Com laudo cautelar aprovado, 1 ano de garantia, Aceita troca">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Descrição Completa</label>
+                        <textarea id="veiculoDescricao" class="form-control form-textarea-sm" placeholder="Resumo do carro para o consultor e IA..."></textarea>
+                    </div>
+
+                    <div class="form-row-2" style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="veiculoDestaque">
+                            <span>📢 Carro do Anúncio (Enviado quando o cliente perguntar do anúncio)</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="veiculoAtivo" checked>
+                            <span>🟢 Ativo no Estoque (Liberado para IA enviar)</span>
+                        </label>
+                    </div>
+
+                    <!-- FOTOS ATUAIS DO CARRO (SE EDITANDO) -->
+                    <div class="form-group" id="existingPhotosGroup" style="display:none;">
+                        <label style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span>📸 Fotos Cadastradas no Estoque (<span id="existingPhotosCount">0</span>)</span>
+                            <span style="font-size:0.75rem; color:var(--brand-accent); font-weight:600;">⭐ A 1ª foto é enviada com a ficha técnica</span>
+                        </label>
+                        <div class="car-gallery-grid" id="modalVeiculoExistingPhotos" style="max-height: 240px; margin-bottom: 12px;"></div>
+                    </div>
+
+                    <!-- FOTOS UPLOAD DRAG & DROP -->
+                    <div class="form-group">
+                        <label>➕ Adicionar Mais Fotos do Carro</label>
+                        <div class="photo-dropzone" id="photoDropzone">
+                            <input type="file" id="photoInput" multiple accept="image/*" class="hidden">
+                            <div class="dropzone-inner" onclick="document.getElementById('photoInput').click()">
+                                <span class="dropzone-icon">📷</span>
+                                <span class="dropzone-text">Clique ou arraste novas fotos aqui</span>
+                                <span class="dropzone-sub">Suporta JPG, PNG, WEBP (selecione várias fotos de uma vez)</span>
+                            </div>
+                            <div class="photos-preview-grid" id="photosPreviewGrid"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-ghost" id="btnCancelarVeiculo">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="btnSalvarVeiculo">Salvar Veículo e Fotos</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── MODAL: GALERIA DE FOTOS DO VEÍCULO ── -->
+    <div class="modal-overlay hidden" id="modalFotosVeiculo">
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <div class="modal-lead-info">
+                    <div class="modal-avatar" style="background: var(--green-glow); color: var(--green);">🚗</div>
+                    <div>
+                        <h3 id="galleryCarTitle">Fotos do Veículo</h3>
+                        <span id="galleryCarSub" class="modal-sub"></span>
+                    </div>
+                </div>
+                <button class="modal-close" id="modalFotosClose">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="gallery-toolbar">
+                    <input type="file" id="galleryUploadInput" multiple accept="image/*" class="hidden">
+                    <button class="btn btn-primary btn-sm" onclick="document.getElementById('galleryUploadInput').click()">
+                        📷 + Adicionar Mais Fotos
+                    </button>
+                    <span class="gallery-count-badge" id="galleryCountBadge">0 fotos cadastradas</span>
+                </div>
+                <div class="car-gallery-grid" id="carGalleryGrid">
+                    <div class="loading-placeholder">Carregando fotos...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="js/app.js?v=20260918_2"></script>
+</body>
+</html>
