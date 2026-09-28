@@ -596,6 +596,57 @@ document.getElementById('btnExportarCsv')?.addEventListener('click', () => {
     window.exportarLeadsCsv();
 });
 
+// Botão Exportar VCF para iPhone
+window.exportarLeadsVcf = async () => {
+    let allLeads = currentLeadsList;
+    try {
+        toast('⏳ Preparando contatos para iPhone (.VCF)...');
+        const res = await api('/leads?limite=5000');
+        if (res && res.leads && res.leads.length > 0) {
+            allLeads = res.leads;
+        }
+    } catch(e) {}
+
+    if (!allLeads || !allLeads.length) {
+        toast('Nenhum lead encontrado para exportar.', 'error');
+        return;
+    }
+
+    let vcf = '';
+    let exportados = 0;
+    allLeads.forEach(l => {
+        const rawTel = String(l.telefone || '').replace(/\D/g, '');
+        if (!rawTel || rawTel.length < 8) return;
+        const telFormatted = rawTel.startsWith('55') ? `+${rawTel}` : `+55${rawTel}`;
+        const nomeClean = (l.nome && l.nome !== '(sem nome)' && l.nome !== l.telefone) ? l.nome.trim() : `Lead ${rawTel.slice(-4)}`;
+        const nomeFinal = `${nomeClean} (Iago Lead)`;
+
+        vcf += 'BEGIN:VCARD\r\n';
+        vcf += 'VERSION:3.0\r\n';
+        vcf += `FN:${nomeFinal}\r\n`;
+        vcf += `N:;${nomeFinal};;;\r\n`;
+        vcf += `TEL;TYPE=CELL,VOICE:${telFormatted}\r\n`;
+        vcf += `NOTE:Lead CRM Iago - Etiqueta: ${l.etiqueta || 'Geral'}\r\n`;
+        vcf += 'END:VCARD\r\n';
+        exportados++;
+    });
+
+    const blob = new Blob([vcf], { type: 'text/vcard;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `contatos_iphone_iago_${new Date().toISOString().slice(0, 10)}.vcf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast(`📱 ${exportados} contatos prontos! Toque no arquivo no iPhone para adicionar todos na agenda!`);
+};
+
+document.getElementById('btnExportarVcf')?.addEventListener('click', () => {
+    window.exportarLeadsVcf();
+});
+
 // Botão Alternar Som Notificação
 document.getElementById('btnToggleSomNotificacao')?.addEventListener('click', () => {
     somNotificacaoAtivo = !somNotificacaoAtivo;
