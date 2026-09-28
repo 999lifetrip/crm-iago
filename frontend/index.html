@@ -236,10 +236,16 @@
                                 <span class="search-icon">🔍</span>
                                 <input type="text" id="searchInput" placeholder="Buscar por cliente ou telefone...">
                             </div>
+                            <button id="btnExportarCsv" class="btn btn-ghost btn-sm" style="display:flex;align-items:center;gap:6px;border:1px solid var(--border-color);" title="Exportar lista de leads para Excel/CSV">
+                                <span>📥</span> <span>Exportar CSV</span>
+                            </button>
+                            <button id="btnToggleSomNotificacao" class="btn btn-ghost btn-sm" style="display:flex;align-items:center;gap:6px;border:1px solid var(--border-color);" title="Ativar ou desativar alertas sonoros de novos leads">
+                                <span id="iconSomNotificacao">🔔</span> <span id="textSomNotificacao">Som Ativo</span>
+                            </button>
                         </div>
                     </div>
 
-                    <div class="filters-bar">
+                    <div class="filters-bar" style="display:flex;flex-direction:column;gap:8px;">
                         <div class="filter-chips" id="etiquetasFilter">
                             <button class="filter-chip active" data-etiqueta="">Todos os Leads</button>
                             <button class="filter-chip" data-etiqueta="novo">🆕 Novos</button>
@@ -250,6 +256,13 @@
                             <button class="filter-chip" data-etiqueta="fechado">🤝 Fechados</button>
                             <button class="filter-chip" data-etiqueta="perdido">❌ Perdidos</button>
                             <button class="filter-chip" data-etiqueta="escalado">🔔 Escalados</button>
+                        </div>
+                        <div class="filter-chips" id="periodoFilter" style="display:flex;align-items:center;gap:6px;">
+                            <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Período:</span>
+                            <button class="filter-chip active" data-periodo="">Todos os Dias</button>
+                            <button class="filter-chip" data-periodo="hoje">📅 Hoje</button>
+                            <button class="filter-chip" data-periodo="ontem">Ontem</button>
+                            <button class="filter-chip" data-periodo="7dias">Últimos 7 dias</button>
                         </div>
                     </div>
 
@@ -812,7 +825,12 @@
                         <span id="modalLeadTelefone" class="modal-sub"></span>
                     </div>
                 </div>
-                <button class="modal-close" id="modalLeadClose">✕</button>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <a id="modalBtnWhatsAppDirect" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-whatsapp-direct" style="display:inline-flex; align-items:center; gap:6px; background:#10b981; color:#fff; font-weight:600; text-decoration:none; padding:6px 14px; border-radius:8px; font-size:0.8rem; box-shadow:0 2px 8px rgba(16,185,129,0.3);">
+                        <span>🟢</span> <span>Abrir no WhatsApp</span>
+                    </a>
+                    <button class="modal-close" id="modalLeadClose">✕</button>
+                </div>
             </div>
             <div class="modal-body modal-two-col">
                 <div class="modal-col modal-col-left">
