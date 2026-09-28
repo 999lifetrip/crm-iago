@@ -6,12 +6,61 @@ const API = '/api';
 let token = localStorage.getItem('crm_token');
 let currentUser = null;
 let currentLeadData = null;
-let leadsState = { pagina: 1, busca: '', ia_ativa: '', etiqueta: 'todos' };
+let leadsState = { pagina: 1, busca: '', ia_ativa: '', etiqueta: 'todos', periodo: '' };
 let veiculosState = { busca: '', destaque: '', ativo: '' };
 let usuarios = [];
 let refreshInterval = null;
 let pendingPhotos = []; // para o modal de cadastro/edição de veículos
 let activeGalleryVehicleId = null;
+let currentLeadsList = [];
+let somNotificacaoAtivo = true;
+let ultimoTotalLeads = null;
+let leadsConhecidosEscalados = new Set();
+
+function cleanPhone(tel) {
+    let clean = String(tel || '').replace(/\D/g, '');
+    if (!clean) return '';
+    if (!clean.startsWith('55')) clean = '55' + clean;
+    return clean;
+}
+
+function tocarAlertaLeadNovo() {
+    if (!somNotificacaoAtivo) return;
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        if (ctx.state === 'suspended') {
+            ctx.resume().catch(() => {});
+        }
+        
+        // Tom 1 (880Hz - A5)
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(880, ctx.currentTime);
+        gain1.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start(ctx.currentTime);
+        osc1.stop(ctx.currentTime + 0.3);
+
+        // Tom 2 (1320Hz - E6)
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(1320, ctx.currentTime + 0.15);
+        gain2.gain.setValueAtTime(0.15, ctx.currentTime + 0.15);
+        gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(ctx.currentTime + 0.15);
+        osc2.stop(ctx.currentTime + 0.5);
+    } catch (e) {
+        console.log('Audio notification error:', e);
+    }
+}
 
 // ─── Helpers ──────────────────────────────────────────────────
 function api(endpoint, options = {}) {
@@ -348,7 +397,44 @@ async function loadLeads() {
         if (leadsState.etiqueta !== 'todos') params.set('etiqueta', leadsState.etiqueta);
 
         const data = await api(`/leads?${params}`);
-        renderLeadsTable(data.leads);
+        let leads = data.leads || [];
+
+        // Filtro local por período
+        if (leadsState.periodo) {
+            const now = new Date();
+            leads = leads.filter(l => {
+                if (!l.ultima_interacao) return false;
+                const d = new Date(l.ultima_interacao);
+                if (leadsState.periodo === 'hoje') {
+                    return d.toDateString() === now.toDateString();
+                } else if (leadsState.periodo === 'ontem') {
+                    const ontem = new Date(); ontem.setDate(ontem.getDate() - 1);
+                    return d.toDateString() === ontem.toDateString();
+                } else if (leadsState.periodo === '7dias') {
+                    const limite = new Date(); limite.setDate(limite.getDate() - 7);
+                    return d >= limite;
+                }
+                return true;
+            });
+        }
+
+        // Alerta sonoro / visual se entrar lead novo
+        if (ultimoTotalLeads !== null && data.total > ultimoTotalLeads) {
+            tocarAlertaLeadNovo();
+            toast('🔔 Novo lead recebido no WhatsApp!');
+        }
+        ultimoTotalLeads = data.total;
+
+        // Alerta sonoro / visual se houver lead escalado para vendedor humano
+        const novoEscalado = leads.find(l => (l.etiqueta === 'escalado' || l.etapa_funil === 'com_vendedor') && !leadsConhecidosEscalados.has(l.telefone));
+        if (novoEscalado) {
+            leadsConhecidosEscalados.add(novoEscalado.telefone);
+            tocarAlertaLeadNovo();
+            toast(`🚨 ATENÇÃO: Lead ${novoEscalado.nome || novoEscalado.telefone} aguardando atendimento humano!`, 'error');
+        }
+
+        currentLeadsList = leads;
+        renderLeadsTable(leads);
         renderPagination(data.total_paginas, data.pagina);
     } catch (e) {
         tbody.innerHTML = `<tr><td colspan="7" class="table-loading" style="color:var(--red)">❌ Erro: ${e.message}</td></tr>`;
@@ -365,6 +451,7 @@ function renderLeadsTable(leads) {
     tbody.innerHTML = leads.map(l => {
         const rawMsg = l.ultima_mensagem || '—';
         const cleanMsg = rawMsg.replace(/\[\{.*?\}\]/g, '').trim();
+        const telLimpo = cleanPhone(l.telefone);
 
         return `
             <tr onclick="openLead('${encodeURIComponent(l.telefone)}')">
@@ -391,10 +478,19 @@ function renderLeadsTable(leads) {
                     ${escapeHtml(cleanMsg)}
                 </td>
                 <td style="color:var(--text-secondary);font-size:0.78rem;white-space:nowrap;">${timeAgo(l.ultima_interacao)}</td>
-                <td>
-                    <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); openLead('${encodeURIComponent(l.telefone)}')">
-                        Ver →
-                    </button>
+                <td style="white-space:nowrap;">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <a href="https://wa.me/${telLimpo}" target="_blank" rel="noopener noreferrer" 
+                           class="btn btn-sm" 
+                           onclick="event.stopPropagation()" 
+                           title="Abrir WhatsApp direto com o cliente"
+                           style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;font-size:0.75rem;font-weight:600;border-radius:6px;transition:all 0.2s;">
+                            <span>🟢</span> <span>WhatsApp</span>
+                        </a>
+                        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); openLead('${encodeURIComponent(l.telefone)}')">
+                            Ver →
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
@@ -455,6 +551,60 @@ document.querySelectorAll('#etiquetasFilter .filter-chip').forEach(chip => {
         leadsState.pagina = 1;
         loadLeads();
     });
+});
+
+// Filters Leads por Período
+document.querySelectorAll('#periodoFilter .filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        document.querySelectorAll('#periodoFilter .filter-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        leadsState.periodo = chip.dataset.periodo || '';
+        leadsState.pagina = 1;
+        loadLeads();
+    });
+});
+
+// Botão Exportar CSV
+window.exportarLeadsCsv = () => {
+    if (!currentLeadsList || !currentLeadsList.length) {
+        toast('Nenhum lead encontrado para exportar.', 'error');
+        return;
+    }
+    const headers = ['Nome', 'Telefone', 'Etiqueta', 'Status IA', 'Ultima Interacao', 'Ultima Mensagem'];
+    const rows = currentLeadsList.map(l => [
+        `"${(l.nome || '').replace(/"/g, '""')}"`,
+        `"${(l.telefone || '').replace(/"/g, '""')}"`,
+        `"${(l.etiqueta || '').replace(/"/g, '""')}"`,
+        l.ia_ativa ? 'IA Ativa' : 'Humano',
+        l.ultima_interacao ? new Date(l.ultima_interacao).toLocaleString('pt-BR') : '',
+        `"${(l.ultima_mensagem || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `leads_iago_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast('📥 Planilha CSV exportada com sucesso!');
+};
+
+document.getElementById('btnExportarCsv')?.addEventListener('click', () => {
+    window.exportarLeadsCsv();
+});
+
+// Botão Alternar Som Notificação
+document.getElementById('btnToggleSomNotificacao')?.addEventListener('click', () => {
+    somNotificacaoAtivo = !somNotificacaoAtivo;
+    const icon = document.getElementById('iconSomNotificacao');
+    const txt = document.getElementById('textSomNotificacao');
+    if (icon) icon.textContent = somNotificacaoAtivo ? '🔔' : '🔕';
+    if (txt) txt.textContent = somNotificacaoAtivo ? 'Som Ativo' : 'Som Mudo';
+    toast(somNotificacaoAtivo ? '🔔 Alerta sonoro ativado!' : '🔕 Alerta sonoro silenciado.');
+    if (somNotificacaoAtivo) tocarAlertaLeadNovo();
 });
 
 // ─── Lead Modal & Live WhatsApp Chat ───────────────────────────
@@ -521,6 +671,11 @@ function renderLeadModal(lead, historico = [], audios = [], veiculosFotos = [], 
         document.getElementById('modalLeadNome').textContent = lead.nome || '(sem nome)';
         document.getElementById('modalLeadTelefone').textContent = formatTel(lead.telefone);
         document.getElementById('modalAvatar').textContent = initials(lead.nome || lead.telefone);
+
+        const btnWhatsModal = document.getElementById('modalBtnWhatsAppDirect');
+        if (btnWhatsModal) {
+            btnWhatsModal.href = `https://wa.me/${cleanPhone(lead.telefone)}`;
+        }
 
         const iaToggle = document.getElementById('iaToggle');
         iaToggle.checked = lead.ia_ativa;
@@ -1034,7 +1189,7 @@ function renderVeiculosGrid(veiculos) {
                     <div class="veiculo-header">
                         <div>
                             <div class="veiculo-title">${v.modelo}</div>
-                            <div class="veiculo-marca-ano">${v.marca || 'Vendas'} • ${v.ano || '—'}</div>
+                            <div class="veiculo-marca-ano">${v.marca || 'AutoStilo'} • ${v.ano || '—'}</div>
                         </div>
                         <div class="veiculo-preco">${formatMoeda(v.preco)}</div>
                     </div>
@@ -2510,6 +2665,365 @@ document.getElementById('buscaAprovadosInput')?.addEventListener('input', (e) =>
 });
 
 document.getElementById('btnAtualizarAprovados')?.addEventListener('click', loadAprovados);
+
+// ═══════════════════════════════════════════════════════════════
+// 🤖 EDITOR DO ROBÔ (IA) — IMPLEMENTAÇÃO COMPLETA
+// ═══════════════════════════════════════════════════════════════
+
+let iaEditorState = {
+    promptAtual: '',
+    metadata: null,
+    chatHistorico: [],
+    refinadoTemporario: null,
+    carregado: false
+};
+
+function updateCharCount() {
+    const textarea = document.getElementById('promptTextarea');
+    const pill = document.getElementById('promptCharCount');
+    if (textarea && pill) {
+        pill.textContent = `${textarea.value.length} caracteres`;
+    }
+}
+
+function formatChatMessage(text) {
+    if (!text) return '';
+    return escapeHtml(text)
+        .replace(/\n/g, '<br>')
+        .replace(/\*(.*?)\*/g, '<strong>$1</strong>')
+        .replace(/_(.*?)_/g, '<em>$1</em>')
+        .replace(/`(.*?)`/g, '<code style="background:rgba(255,255,255,0.1);padding:2px 4px;border-radius:4px;">$1</code>');
+}
+
+async function loadIaPrompt() {
+    try {
+        const res = await api('/ia/prompt');
+        iaEditorState.promptAtual = res.prompt || '';
+        iaEditorState.metadata = res.metadata || {};
+
+        const promptTextarea = document.getElementById('promptTextarea');
+        if (promptTextarea) {
+            promptTextarea.value = iaEditorState.promptAtual;
+            updateCharCount();
+        }
+
+        const versao = res.metadata?.versao || 1;
+        const badge = document.getElementById('promptVersionBadge');
+        if (badge) badge.textContent = `Versão ${versao}`;
+
+        const chatVersao = document.getElementById('chatTreinadorVersao');
+        if (chatVersao) chatVersao.textContent = `Versão ${versao}`;
+
+        await Promise.all([
+            loadChatTreinadorHistorico(),
+            loadPromptHistorico()
+        ]);
+
+        iaEditorState.carregado = true;
+    } catch (e) {
+        console.error('Erro ao carregar prompt da IA:', e);
+        toast('Erro ao carregar configurações da IA: ' + e.message, 'error');
+    }
+}
+
+async function loadChatTreinadorHistorico() {
+    const bodyEl = document.getElementById('chatTreinadorMessages');
+    if (!bodyEl) return;
+
+    try {
+        const res = await api('/ia/chat-treinador/historico');
+        const msgs = res.historico || [];
+        iaEditorState.chatHistorico = msgs;
+
+        if (msgs.length === 0) {
+            bodyEl.innerHTML = `
+                <div class="ia-bubble assistant">
+                    Olá! Eu sou o <strong>Iago</strong>, consultor virtual da loja. 🤖<br><br>
+                    Você pode conversar comigo para testar minhas respostas ou me dar <strong>ordens diretas</strong> sobre o que mudar no atendimento (ex: <em>"A partir de agora informe que aceitamos motos na troca"</em>).
+                    <div class="ia-bubble-meta">Sistema</div>
+                </div>
+            `;
+            return;
+        }
+
+        bodyEl.innerHTML = msgs.map(m => `
+            <div class="ia-bubble ${m.role}">
+                ${formatChatMessage(m.content)}
+                ${m.alterou_prompt ? '<div class="ia-bubble-alert-update">✨ Instruções do robô atualizadas no WhatsApp!</div>' : ''}
+                <div class="ia-bubble-meta">${m.role === 'user' ? 'Você' : 'Iago'} • ${m.horario || ''}</div>
+            </div>
+        `).join('');
+
+        bodyEl.scrollTop = bodyEl.scrollHeight;
+    } catch(e) {
+        bodyEl.innerHTML = `<div class="text-muted p-sm">Não foi possível carregar o histórico: ${e.message}</div>`;
+    }
+}
+
+async function enviarOrdemTreinador() {
+    const input = document.getElementById('inputOrdemTreinador');
+    const msg = input?.value.trim();
+    if (!msg) return;
+
+    const bodyEl = document.getElementById('chatTreinadorMessages');
+    input.value = '';
+
+    // Adiciona bolha do usuário
+    const userBubble = document.createElement('div');
+    userBubble.className = 'ia-bubble user';
+    userBubble.innerHTML = `${formatChatMessage(msg)}<div class="ia-bubble-meta">Você • Agora</div>`;
+    bodyEl.appendChild(userBubble);
+
+    // Bolha de digitação
+    const loadingBubble = document.createElement('div');
+    loadingBubble.className = 'ia-bubble assistant';
+    loadingBubble.id = 'treinadorTyping';
+    loadingBubble.innerHTML = `<em>Iago está pensando e ajustando as regras... ⏳</em>`;
+    bodyEl.appendChild(loadingBubble);
+    bodyEl.scrollTop = bodyEl.scrollHeight;
+
+    try {
+        const res = await api('/ia/chat-treinador', {
+            method: 'POST',
+            body: { mensagem: msg }
+        });
+
+        loadingBubble.remove();
+
+        const assistantBubble = document.createElement('div');
+        assistantBubble.className = 'ia-bubble assistant';
+        assistantBubble.innerHTML = `
+            ${formatChatMessage(res.resposta || 'Ordem processada com sucesso!')}
+            ${res.alterou_prompt ? '<div class="ia-bubble-alert-update">✨ Instruções do robô atualizadas no WhatsApp!</div>' : ''}
+            <div class="ia-bubble-meta">Iago • Agora</div>
+        `;
+        bodyEl.appendChild(assistantBubble);
+        bodyEl.scrollTop = bodyEl.scrollHeight;
+
+        if (res.alterou_prompt && res.prompt_refinado) {
+            iaEditorState.promptAtual = res.prompt_refinado;
+            const promptTextarea = document.getElementById('promptTextarea');
+            if (promptTextarea) {
+                promptTextarea.value = res.prompt_refinado;
+                updateCharCount();
+            }
+            toast('✅ Regra incorporada ao robô no WhatsApp com sucesso!');
+            await loadIaPrompt();
+        }
+    } catch(e) {
+        loadingBubble.remove();
+        toast('Erro ao processar ordem com o Iago: ' + e.message, 'error');
+    }
+}
+
+async function salvarPromptManual() {
+    const promptTextarea = document.getElementById('promptTextarea');
+    const text = promptTextarea?.value.trim();
+    if (!text) {
+        toast('O prompt não pode estar vazio', 'warning');
+        return;
+    }
+
+    try {
+        const res = await api('/ia/prompt', {
+            method: 'POST',
+            body: {
+                prompt_text: text,
+                notas: 'Edição direta via painel CRM'
+            }
+        });
+
+        toast('💾 Prompt publicado com sucesso no WhatsApp!');
+        iaEditorState.promptAtual = text;
+        const versao = res.metadata?.versao || 1;
+        const badge = document.getElementById('promptVersionBadge');
+        if (badge) badge.textContent = `Versão ${versao}`;
+        const chatVersao = document.getElementById('chatTreinadorVersao');
+        if (chatVersao) chatVersao.textContent = `Versão ${versao}`;
+        await loadPromptHistorico();
+    } catch(e) {
+        toast('Erro ao salvar prompt: ' + e.message, 'error');
+    }
+}
+
+async function loadPromptHistorico() {
+    const select = document.getElementById('selectHistoricoPrompt');
+    if (!select) return;
+
+    try {
+        const res = await api('/ia/prompt/historico');
+        const list = res.historico || [];
+        select.innerHTML = '<option value="">⏮️ Histórico de Versões...</option>';
+        list.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v.id;
+            opt.textContent = `V${v.versao} (${new Date(v.criado_em).toLocaleDateString('pt-BR')}) - ${v.notas || 'Atualização'}`;
+            select.appendChild(opt);
+        });
+    } catch(e) {}
+}
+
+async function reverterPrompt(id) {
+    if (!id) return;
+    if (!confirm('Deseja reverter para esta versão anterior do prompt?')) return;
+
+    try {
+        await api('/ia/prompt/reverter', {
+            method: 'POST',
+            body: { id }
+        });
+        toast('Versão restaurada com sucesso!');
+        await loadIaPrompt();
+    } catch(e) {
+        toast('Erro ao reverter prompt: ' + e.message, 'error');
+    }
+}
+
+async function refinarPromptComIa() {
+    const input = document.getElementById('sugestaoIaInput');
+    const sugestao = input?.value.trim();
+    if (!sugestao) {
+        toast('Digite uma sugestão para a IA', 'warning');
+        return;
+    }
+
+    const btn = document.getElementById('btnRefinarPrompt');
+    const btnText = document.getElementById('btnRefinarText');
+    const spinner = document.getElementById('btnRefinarSpinner');
+    btn.disabled = true;
+    if (btnText) btnText.textContent = 'Processando com IA...';
+    spinner?.classList.remove('hidden');
+
+    try {
+        const res = await api('/ia/prompt/refinar', {
+            method: 'POST',
+            body: {
+                sugestao,
+                prompt_atual: document.getElementById('promptTextarea')?.value || ''
+            }
+        });
+
+        iaEditorState.refinadoTemporario = res.prompt_refinado;
+        const resumoEl = document.getElementById('iaRefinarResumo');
+        if (resumoEl) resumoEl.textContent = res.resumo_alteracoes || 'Alterações preparadas pela IA com base na sua solicitação.';
+        document.getElementById('iaRefinarResult')?.classList.remove('hidden');
+    } catch(e) {
+        toast('Erro ao refinar prompt: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        if (btnText) btnText.textContent = '✨ Refinar Prompt com IA';
+        spinner?.classList.add('hidden');
+    }
+}
+
+// Inicialização dos eventos do IA Editor
+function initIaEditorEvents() {
+    // 1. Navegação de Abas
+    const tabs = [
+        { btn: 'tabModoChat', view: 'viewModoChat' },
+        { btn: 'tabModoVisual', view: 'viewModoVisual' },
+        { btn: 'tabModoAvancado', view: 'viewModoAvancado' }
+    ];
+
+    tabs.forEach(({ btn, view }) => {
+        document.getElementById(btn)?.addEventListener('click', () => {
+            tabs.forEach(t => {
+                document.getElementById(t.btn)?.classList.remove('active');
+                document.getElementById(t.view)?.classList.add('hidden');
+            });
+            document.getElementById(btn)?.classList.add('active');
+            document.getElementById(view)?.classList.remove('hidden');
+        });
+    });
+
+    // 2. Chat Treinador
+    document.getElementById('btnEnviarOrdemTreinador')?.addEventListener('click', enviarOrdemTreinador);
+    document.getElementById('inputOrdemTreinador')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            enviarOrdemTreinador();
+        }
+    });
+
+    document.getElementById('btnLimparChatTreinador')?.addEventListener('click', async () => {
+        if (!confirm('Deseja limpar todo o histórico de conversas com o Iago?')) return;
+        try {
+            await api('/ia/chat-treinador/limpar', { method: 'POST' });
+            toast('Histórico de conversas limpo.');
+            await loadChatTreinadorHistorico();
+        } catch(e) {
+            toast('Erro ao limpar histórico: ' + e.message, 'error');
+        }
+    });
+
+    // 3. Salvar Prompt Manual
+    document.getElementById('btnSalvarPrompt')?.addEventListener('click', salvarPromptManual);
+
+    // 4. Contador de caracteres no textarea
+    document.getElementById('promptTextarea')?.addEventListener('input', updateCharCount);
+
+    // 5. Histórico e Reversão
+    document.getElementById('selectHistoricoPrompt')?.addEventListener('change', (e) => {
+        if (e.target.value) {
+            reverterPrompt(e.target.value);
+        }
+    });
+
+    // 6. Restaurar padrão de fábrica
+    document.getElementById('btnRestaurarPadrao')?.addEventListener('click', async () => {
+        if (!confirm('Atenção: deseja resetar o prompt para a versão padrão de fábrica do Iago?')) return;
+        try {
+            await api('/ia/prompt', {
+                method: 'POST',
+                body: { prompt_text: 'RESTAURAR_PADRAO', notas: 'Restauração de padrão de fábrica' }
+            });
+            toast('Prompt padrão restaurado!');
+            await loadIaPrompt();
+        } catch(e) {
+            toast('Erro ao restaurar padrão: ' + e.message, 'error');
+        }
+    });
+
+    // 7. Assistente de Sugestões com IA
+    document.getElementById('btnRefinarPrompt')?.addEventListener('click', refinarPromptComIa);
+    document.getElementById('btnDesfazerRefinamento')?.addEventListener('click', () => {
+        iaEditorState.refinadoTemporario = null;
+        document.getElementById('iaRefinarResult')?.classList.add('hidden');
+    });
+
+    document.getElementById('btnAplicarESalvar')?.addEventListener('click', async () => {
+        if (!iaEditorState.refinadoTemporario) return;
+        const promptTextarea = document.getElementById('promptTextarea');
+        if (promptTextarea) {
+            promptTextarea.value = iaEditorState.refinadoTemporario;
+            updateCharCount();
+        }
+        document.getElementById('iaRefinarResult')?.classList.add('hidden');
+        await salvarPromptManual();
+    });
+
+    // 8. Controles do Painel Visual
+    document.querySelectorAll('.tone-card').forEach(card => {
+        card.addEventListener('click', () => {
+            document.querySelectorAll('.tone-card').forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+            toast(`Tom de voz ajustado para: ${card.querySelector('.tone-title')?.textContent}`);
+        });
+    });
+
+    document.querySelectorAll('.btn-quick-tag').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const input = document.getElementById('promoTextoInput');
+            if (input) {
+                input.value = btn.dataset.tag;
+                toast('Promoção aplicada na sugestão!');
+            }
+        });
+    });
+}
+
+// Inicializa os ouvintes do IA Editor
+initIaEditorEvents();
 
 // ─── Boot ──────────────────────────────────────────────────────
 checkAuth();
